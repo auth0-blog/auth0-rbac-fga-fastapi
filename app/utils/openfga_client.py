@@ -2,8 +2,7 @@ import asyncio
 from typing import Optional, Dict, Any
 from openfga_sdk import OpenFgaClient
 from openfga_sdk.client import ClientConfiguration
-from openfga_sdk.models import CheckRequest, TupleKey
-from openfga_sdk.client.models import ClientWriteRequest, ClientTuple
+from openfga_sdk.client.models import ClientCheckRequest, ClientWriteRequest, ClientTuple
 from dotenv import load_dotenv
 import os
 
@@ -23,12 +22,10 @@ class OpenFGAClient:
     async def check_permission(self, user: str, relation: str, object_id: str) -> bool:
         """Check if a user has a specific relation to an object."""
         try:
-            response = await self.client.check(CheckRequest(
-                tuple_key=TupleKey(
-                    user=user,
-                    relation=relation,
-                    object=object_id
-                )
+            response = await self.client.check(ClientCheckRequest(
+                user=user,
+                relation=relation,
+                object=object_id
             ))
             return response.allowed
         except Exception as e:

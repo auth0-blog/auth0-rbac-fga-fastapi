@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = True
     
+    # Database Configuration
+    database_url: str = "sqlite+aiosqlite:///./app.db"
+    
     # OpenFGA Configuration
     openfga_api_url: str = "http://localhost:8080"
     openfga_store_id: str = ""

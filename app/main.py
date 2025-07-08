@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.config import settings
+from app.database import init_db
 from app.routes import organization_routes, resource_routes
 
 @asynccontextmanager
@@ -10,6 +11,9 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"Starting {settings.app_title} v{settings.app_version}")
     print(f"OpenFGA API URL: {settings.openfga_api_url}")
+    print("Initializing database...")
+    await init_db()
+    print("Database initialized successfully!")
     yield
     # Shutdown
     print("Shutting down...")
