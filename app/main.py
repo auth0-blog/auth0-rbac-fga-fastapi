@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.config import settings
-from app.routes import organization_routes, project_manager_routes, role_routes, permission_routes
+from app.routes import organization_routes, resource_routes
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -15,20 +15,24 @@ async def lifespan(app: FastAPI):
     print("Shutting down...")
 
 app = FastAPI(
-    title=settings.app_title,
+    title="FastAPI OpenFGA RBAC Demo",
     version=settings.app_version,
     debug=settings.debug,
     lifespan=lifespan,
     description="""
-    A FastAPI application demonstrating OpenFGA integration for organization management.
+    A simple FastAPI application demonstrating RBAC (Role-Based Access Control) using OpenFGA.
     
-    This API provides endpoints for:
-    - Managing organizations
-    - Assigning project managers
-    - Role-based access control
-    - Permission checking
+    This demo showcases:
+    - Organizations with admin/member roles
+    - Resources owned by organizations
+    - Permission inheritance from organization roles to resource permissions
     
-    All authorization is handled through OpenFGA.
+    ## RBAC Model
+    - **admin**: Can manage organization members and delete resources
+    - **member**: Can view organization members and resources, create new resources
+    - **Resources**: Inherit permissions from their owning organization
+    
+    All authorization is handled through OpenFGA using a simple, coarse-grained access control model.
     """
 )
 
@@ -48,32 +52,65 @@ app.include_router(
     tags=["organizations"]
 )
 app.include_router(
-    project_manager_routes.router, 
-    prefix="/project-managers", 
-    tags=["project_managers"]
-)
-app.include_router(
-    role_routes.router, 
-    prefix="/roles", 
-    tags=["roles"]
-)
-app.include_router(
-    permission_routes.router, 
-    prefix="/permissions", 
-    tags=["permissions"]
+    resource_routes.router, 
+    prefix="/resources", 
+    tags=["resources"]
 )
 
 @app.get("/")
 async def read_root():
     """Root endpoint with API information."""
     return {
-        "message": f"Welcome to {settings.app_title}!",
+        "message": "Welcome to the FastAPI OpenFGA RBAC Demo!",
         "version": settings.app_version,
         "docs": "/docs",
-        "redoc": "/redoc"
+        "redoc": "/redoc",
+        "model": "Simple RBAC with organizations and resources",
+        "roles": ["admin", "member"],
+        "example_usage": {
+            "1": "Create an organization (user becomes admin)",
+            "2": "Add members to the organization",
+            "3": "Create resources in the organization",
+            "4": "Check permissions on resources"
+        }
     }
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "version": settings.app_version}
+
+@app.get("/rbac-info")
+async def rbac_info():
+    """Information about the RBAC model implementation."""
+    return {
+        "model": "OpenFGA RBAC Implementation",
+        "pattern": "Coarse-grained access control",
+        "types": {
+            "user": "Individual users in the system",
+            "organization": "Groups that contain users with roles",
+            "resource": "Assets owned by organizations"
+        },
+        "roles": {
+            "admin": {
+                "description": "Full control over organization and its resources",
+                "permissions": [
+                    "can_add_member",
+                    "can_delete_member", 
+                    "can_view_member",
+                    "can_add_resource",
+                    "can_delete_resource",
+                    "can_view_resource"
+                ]
+            },
+            "member": {
+                "description": "Basic access to organization and resources",
+                "permissions": [
+                    "can_view_member",
+                    "can_add_resource", 
+                    "can_view_resource"
+                ]
+            }
+        },
+        "inheritance": "Resource permissions inherit from organization roles via 'admin from organization' and 'member from organization' patterns"
+    }

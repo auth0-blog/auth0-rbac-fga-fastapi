@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime
 
 class OrganizationBase(BaseModel):
@@ -20,7 +20,7 @@ class Organization(OrganizationBase):
     class Config:
         from_attributes = True
 
-class OrganizationMember(BaseModel):
-    user_id: str
-    organization_id: str
-    role: str  # admin, member, viewer
+class MemberAssignment(BaseModel):
+    user_id: str = Field(..., description="User ID to assign/remove")
+    role: str = Field(..., description="Role: 'admin' or 'member'")
+    organization_id: str = Field(..., description="Organization ID")

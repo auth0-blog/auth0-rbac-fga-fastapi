@@ -2,16 +2,22 @@ import asyncio
 from typing import Optional, Dict, Any
 from openfga_sdk import OpenFgaClient
 from openfga_sdk.client import ClientConfiguration
-from openfga_sdk.models import CheckRequest, TupleKey, WriteRequest, WriteRequestWrites
-from app.config import settings
+from openfga_sdk.models import CheckRequest, TupleKey
+from openfga_sdk.client.models import ClientWriteRequest, ClientTuple
+from dotenv import load_dotenv
+import os
 
 class OpenFGAClient:
     def __init__(self):
+        # Load environment variables from .env file
+        load_dotenv()
+
         configuration = ClientConfiguration(
-            api_url=settings.openfga_api_url,
-            store_id=settings.openfga_store_id,
-            authorization_model_id=settings.openfga_authorization_model_id,
+            api_url=os.getenv("OPENFGA_API_URL"),
+            store_id=os.getenv("OPENFGA_STORE_ID"),
+            authorization_model_id=os.getenv("OPENFGA_AUTHORIZATION_MODEL_ID"),
         )
+        print(f"Connecting to OpenFGA at {os.getenv("OPENFGA_API_URL")} with store ID {os.getenv("OPENFGA_STORE_ID")}")
         self.client = OpenFgaClient(configuration)
 
     async def check_permission(self, user: str, relation: str, object_id: str) -> bool:
@@ -29,23 +35,24 @@ class OpenFGAClient:
             print(f"Error checking permission: {e}")
             return False
 
-    async def write_tuples(self, tuples: list[TupleKey]) -> bool:
+    async def write_tuples(self, tuples: list[ClientTuple]) -> bool:
         """Write relationship tuples to OpenFGA."""
         try:
-            write_request = WriteRequest(
-                writes=WriteRequestWrites(tuple_keys=tuples)
+            write_request = ClientWriteRequest(
+                writes=tuples
             )
+            
             await self.client.write(write_request)
             return True
         except Exception as e:
             print(f"Error writing tuples: {e}")
             return False
 
-    async def delete_tuples(self, tuples: list[TupleKey]) -> bool:
+    async def delete_tuples(self, tuples: list[ClientTuple]) -> bool:
         """Delete relationship tuples from OpenFGA."""
         try:
-            write_request = WriteRequest(
-                deletes=WriteRequestWrites(tuple_keys=tuples)
+            write_request = ClientWriteRequest(
+                deletes=tuples
             )
             await self.client.write(write_request)
             return True

@@ -1,45 +1,29 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
-from typing import List, Optional
+from fastapi import APIRouter, HTTPException, Query
+from typing import List
 import uuid
 from datetime import datetime
 
 from app.models.organization import (
     Organization, 
     OrganizationCreate, 
-    OrganizationUpdate, 
-    OrganizationMember
+    OrganizationUpdate,
+    MemberAssignment
 )
-from app.models.role import RoleType
-from app.services.authorization_service import auth_service
+from app.services.authorization_service import authz_service
 
 router = APIRouter()
 
 # In-memory storage for demo purposes
 organizations_db = {}
 
-async def check_organization_access(user_id: str, organization_id: str, required_permission: str = "read"):
-    """Dependency to check if user has access to organization."""
-    if required_permission == "admin":
-        has_access = await auth_service.check_admin_access(user_id, organization_id)
-    elif required_permission == "write":
-        has_access = await auth_service.check_write_access(user_id, organization_id)
-    else:
-        has_access = await auth_service.check_read_access(user_id, organization_id)
-    
-    if not has_access:
-        raise HTTPException(
-            status_code=403, 
-            detail=f"Insufficient permissions for {required_permission} access to organization"
-        )
-
 @router.get("/", response_model=List[Organization])
 async def list_organizations(
     user_id: str = Query(..., description="User ID for authorization")
 ):
-    """List all organizations the user has access to."""
+    """List all organizations where the user has at least member access."""
     accessible_orgs = []
     for org_id, org in organizations_db.items():
-        if await auth_service.check_read_access(user_id, org_id):
+        if await authz_service.can_view_member(user_id, org_id):
             accessible_orgs.append(org)
     return accessible_orgs
 
@@ -49,7 +33,8 @@ async def get_organization(
     user_id: str = Query(..., description="User ID for authorization")
 ):
     """Get a specific organization."""
-    await check_organization_access(user_id, organization_id, "read")
+    if not await authz_service.can_view_member(user_id, organization_id):
+        raise HTTPException(status_code=403, detail="Access denied")
     
     if organization_id not in organizations_db:
         raise HTTPException(status_code=404, detail="Organization not found")
@@ -61,7 +46,7 @@ async def create_organization(
     organization: OrganizationCreate,
     user_id: str = Query(..., description="User ID for authorization")
 ):
-    """Create a new organization."""
+    """Create a new organization. Creator becomes admin."""
     org_id = str(uuid.uuid4())
     new_org = Organization(
         id=org_id,
@@ -73,7 +58,7 @@ async def create_organization(
     organizations_db[org_id] = new_org
     
     # Assign creator as admin
-    await auth_service.assign_role_to_user(user_id, RoleType.ADMIN, org_id)
+    await authz_service.assign_user_to_organization(user_id, org_id, "admin")
     
     return new_org
 
@@ -83,8 +68,9 @@ async def update_organization(
     organization: OrganizationUpdate,
     user_id: str = Query(..., description="User ID for authorization")
 ):
-    """Update an organization."""
-    await check_organization_access(user_id, organization_id, "write")
+    """Update an organization (admin only)."""
+    if not await authz_service.can_add_member(user_id, organization_id):
+        raise HTTPException(status_code=403, detail="Admin access required")
     
     if organization_id not in organizations_db:
         raise HTTPException(status_code=404, detail="Organization not found")
@@ -102,8 +88,9 @@ async def delete_organization(
     organization_id: str,
     user_id: str = Query(..., description="User ID for authorization")
 ):
-    """Delete an organization."""
-    await check_organization_access(user_id, organization_id, "admin")
+    """Delete an organization (admin only)."""
+    if not await authz_service.can_add_member(user_id, organization_id):
+        raise HTTPException(status_code=403, detail="Admin access required")
     
     if organization_id not in organizations_db:
         raise HTTPException(status_code=404, detail="Organization not found")
@@ -114,17 +101,24 @@ async def delete_organization(
 @router.post("/{organization_id}/members")
 async def add_member(
     organization_id: str,
-    member: OrganizationMember,
+    member: MemberAssignment,
     user_id: str = Query(..., description="User ID for authorization")
 ):
-    """Add a member to an organization."""
-    await check_organization_access(user_id, organization_id, "admin")
+    """Add a member to an organization (admin only)."""
+    if not await authz_service.can_add_member(user_id, organization_id):
+        raise HTTPException(status_code=403, detail="Admin access required")
     
     if organization_id not in organizations_db:
         raise HTTPException(status_code=404, detail="Organization not found")
     
-    role = RoleType(member.role)
-    success = await auth_service.assign_role_to_user(member.user_id, role, organization_id)
+    if member.role not in ["admin", "member"]:
+        raise HTTPException(status_code=400, detail="Role must be 'admin' or 'member'")
+    
+    success = await authz_service.assign_user_to_organization(
+        member.user_id, 
+        organization_id, 
+        member.role
+    )
     
     if not success:
         raise HTTPException(status_code=500, detail="Failed to assign role")
@@ -135,19 +129,26 @@ async def add_member(
 async def remove_member(
     organization_id: str,
     member_user_id: str,
-    role: str = Query(..., description="Role to remove"),
+    role: str = Query(..., description="Role to remove ('admin' or 'member')"),
     user_id: str = Query(..., description="User ID for authorization")
 ):
-    """Remove a member from an organization."""
-    await check_organization_access(user_id, organization_id, "admin")
+    """Remove a member from an organization (admin only)."""
+    if not await authz_service.can_delete_member(user_id, organization_id):
+        raise HTTPException(status_code=403, detail="Admin access required")
     
     if organization_id not in organizations_db:
         raise HTTPException(status_code=404, detail="Organization not found")
     
-    role_type = RoleType(role)
-    success = await auth_service.remove_role_from_user(member_user_id, role_type, organization_id)
+    if role not in ["admin", "member"]:
+        raise HTTPException(status_code=400, detail="Role must be 'admin' or 'member'")
+    
+    success = await authz_service.remove_user_from_organization(
+        member_user_id, 
+        organization_id, 
+        role
+    )
     
     if not success:
         raise HTTPException(status_code=500, detail="Failed to remove role")
     
-    return {"message": f"User {member_user_id} removed from {role}"}
+    return {"message": f"User {member_user_id} removed from {role} role"}
