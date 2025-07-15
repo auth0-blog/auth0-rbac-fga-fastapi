@@ -198,4 +198,4 @@ This basic RBAC model can be extended by:
 
 ## License
 
-This project is licensed under the Apache License.
+This project is licensed under the MIT License.
