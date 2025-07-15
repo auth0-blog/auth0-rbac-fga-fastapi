@@ -90,9 +90,15 @@ fastapi-openfga-project/
 - **API Documentation**: Interactive Swagger UI documentation
 - **Data Validation**: Pydantic models for request/response validation
 
+## Requirements
+
+- Python 3.9+
+- Docker
+
 ## Setup Instructions
 
 1. **Start OpenFGA Server**
+   You can learn more about [OpenFGA here](https://github.com/openfga/openfga)
    ```bash
    # Using Docker
    docker run --rm -p 8080:8080 openfga/openfga run
@@ -129,7 +135,7 @@ fastapi-openfga-project/
 - **FastAPI 0.115.0**: Modern web framework for building APIs
 - **SQLAlchemy 2.0.36**: SQL toolkit and Object-Relational Mapping
 - **aiosqlite 0.20.0**: Async SQLite driver
-- **OpenFGA SDK 0.5.0**: OpenFGA client library
+- **OpenFGA SDK 0.9.5**: OpenFGA python client library
 - **Pydantic 2.10.0**: Data validation and settings management
 - **Uvicorn 0.32.0**: ASGI server implementation
 
@@ -180,36 +186,6 @@ fastapi-openfga-project/
    curl "http://localhost:8000/resources/{resource_id}/permissions?user_id=bob"
    ```
 
-## OpenFGA Best Practices Demonstrated
-
-### 1. **Start with Coarse-Grained Access Control**
-- Two simple roles instead of complex permission matrices
-- Clear separation of responsibilities
-- Easy to understand and implement
-
-### 2. **Use Direct Relationships**
-- Direct user-to-organization role assignments
-- No complex role hierarchies initially
-- Straightforward permission checks
-
-### 3. **Leverage Permission Inheritance**
-- Resources inherit permissions from their owning organization
-- Reduces tuple complexity
-- Maintains clear ownership model
-
-### 4. **Model Real-World Concepts**
-- Organizations as natural grouping mechanisms
-- Resources as owned assets
-- Roles that map to business responsibilities
-
-## Benefits of This Approach
-
-- **Simplicity**: Easy to understand and implement
-- **Scalability**: Can be extended with more roles and permissions
-- **Performance**: Efficient permission checks through inheritance
-- **Auditability**: Clear permission trails through organization ownership
-- **Maintainability**: Simple model reduces complexity
-
 ## Next Steps for Extension
 
 This basic RBAC model can be extended by:
@@ -222,4 +198,4 @@ This basic RBAC model can be extended by:
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for more details.
+This project is licensed under the Apache License.
