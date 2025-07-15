@@ -13,7 +13,7 @@ This demo implements a simple organizational RBAC pattern with:
 
 ## OpenFGA Model
 
-```
+```yaml
 type user
 
 type organization
@@ -38,17 +38,16 @@ type resource
 
 ### 1. **Direct Role Assignment**
 - Users are directly assigned `admin` or `member` roles in organizations
-- Simple, easy to understand and implement
 
 ### 2. **Permission Inheritance**
 - Resource permissions inherit from organization roles
 - Uses OpenFGA's `from` keyword to map organization roles to resource permissions
 - `admin from organization` means "users who are admins of the organization that owns this resource"
 
-### 3. **Coarse-Grained Access Control**
-- Follows OpenFGA best practices by starting simple
-- Two clear roles with distinct permission sets
-- Easy to reason about and audit
+### 3. **Persistent Data Storage**
+- Uses SQLite database with SQLAlchemy for data persistence
+- Data survives server restarts unlike in-memory storage
+- ACID compliance ensures data integrity
 
 ## Permission Matrix
 
@@ -64,9 +63,10 @@ fastapi-openfga-project/
 ├── app/
 │   ├── main.py                  # FastAPI application entry point
 │   ├── config.py                # Configuration settings
+│   ├── database.py              # SQLAlchemy database setup and models
 │   ├── models/
-│   │   ├── organization.py      # Organization and member models
-│   │   └── resource.py          # Resource models
+│   │   ├── organization.py      # Organization Pydantic models
+│   │   └── resource.py          # Resource Pydantic models
 │   ├── routes/
 │   │   ├── organization_routes.py # Organization management endpoints
 │   │   └── resource_routes.py   # Resource management endpoints
@@ -76,9 +76,19 @@ fastapi-openfga-project/
 │   │   └── openfga_client.py    # OpenFGA client wrapper
 │   └── openfga/
 │       └── model.fga.yaml       # OpenFGA model definition
+├── app.db                       # SQLite database file (auto-created)
 ├── requirements.txt
 └── README.md
 ```
+
+## Features
+
+- **Role-Based Access Control**: OpenFGA-powered authorization
+- **Persistent Storage**: SQLite database with SQLAlchemy ORM
+- **Async Support**: Full async/await support for database operations
+- **Auto-reload**: Development server with hot reload
+- **API Documentation**: Interactive Swagger UI documentation
+- **Data Validation**: Pydantic models for request/response validation
 
 ## Setup Instructions
 
@@ -103,10 +113,25 @@ fastapi-openfga-project/
    ```bash
    uvicorn app.main:app --reload
    ```
+   
+   The application will:
+   - Connect to OpenFGA server
+   - Initialize SQLite database tables automatically
+   - Start the FastAPI server on http://127.0.0.1:8000
 
 5. **Access the API**
    - API Documentation: http://127.0.0.1:8000/docs
    - RBAC Info: http://127.0.0.1:8000/rbac-info
+   - Health Check: http://127.0.0.1:8000/health
+
+## Dependencies
+
+- **FastAPI 0.115.0**: Modern web framework for building APIs
+- **SQLAlchemy 2.0.36**: SQL toolkit and Object-Relational Mapping
+- **aiosqlite 0.20.0**: Async SQLite driver
+- **OpenFGA SDK 0.5.0**: OpenFGA client library
+- **Pydantic 2.10.0**: Data validation and settings management
+- **Uvicorn 0.32.0**: ASGI server implementation
 
 ## API Endpoints
 
