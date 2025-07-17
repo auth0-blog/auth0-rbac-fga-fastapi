@@ -93,35 +93,29 @@ fastapi-openfga-project/
 ## Requirements
 
 - Python 3.9+
-- Docker
+- Auth0 Account
+- Auth0 FGA Account
 
 ## Setup Instructions
 
-1. **Start OpenFGA Server**
-   You can learn more about [OpenFGA here](https://github.com/openfga/openfga)
-   ```bash
-   # Using Docker
-   docker run --rm -p 8080:8080 openfga/openfga run
-   ```
-
-2. **Install Dependencies**
+1. **Install Dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Configure Environment**
+2. **Configure Environment**
    ```bash
    cp .env.example .env
-   # Edit .env with your OpenFGA server details
    ```
+   Don't forget to add your credentials!
 
-4. **Run the Application**
+3. **Run the Application**
    ```bash
    uvicorn app.main:app --reload
    ```
    
    The application will:
-   - Connect to OpenFGA server
+   - Connect to Auth0 FGA
    - Initialize SQLite database tables automatically
    - Start the FastAPI server on http://127.0.0.1:8000
 
@@ -135,7 +129,7 @@ fastapi-openfga-project/
 - **FastAPI 0.115.0**: Modern web framework for building APIs
 - **SQLAlchemy 2.0.36**: SQL toolkit and Object-Relational Mapping
 - **aiosqlite 0.20.0**: Async SQLite driver
-- **OpenFGA SDK 0.9.5**: OpenFGA python client library
+- **OpenFGA SDK 0.9.5**: [OpenFGA python client library](https://github.com/openfga/python-sdk)
 - **Pydantic 2.10.0**: Data validation and settings management
 - **Uvicorn 0.32.0**: ASGI server implementation
 
@@ -145,7 +139,6 @@ fastapi-openfga-project/
 - `GET /organizations` - List accessible organizations
 - `POST /organizations` - Create organization (creator becomes admin)
 - `GET /organizations/{id}` - Get organization details
-- `PUT /organizations/{id}` - Update organization (admin only)
 - `DELETE /organizations/{id}` - Delete organization (admin only)
 - `POST /organizations/{id}/members` - Add member (admin only)
 - `DELETE /organizations/{id}/members/{user_id}` - Remove member (admin only)
@@ -154,7 +147,6 @@ fastapi-openfga-project/
 - `GET /resources` - List accessible resources
 - `POST /resources` - Create resource (admin or member)
 - `GET /resources/{id}` - Get resource details
-- `PUT /resources/{id}` - Update resource (admin only)
 - `DELETE /resources/{id}` - Delete resource (admin only)
 - `GET /resources/{id}/permissions` - Check user permissions on resource
 
