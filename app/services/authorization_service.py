@@ -60,12 +60,6 @@ class AuthorizationService:
             relation=action,
             object_id=f"organization:{org_id}"
         )
-        """Check if user can view a resource (admin or member)."""
-        return await openfga_client.check_permission(
-            user=f"user:{user_id}",
-            relation="can_view_resource",
-            object_id=f"resource:{resource_id}"
-        )
 
     async def get_user_organizations(self, user_id: str) -> List[str]:
         """Get all organizations a user is a member of."""

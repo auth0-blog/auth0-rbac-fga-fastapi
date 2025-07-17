@@ -119,6 +119,9 @@ async def update_organization(
     
     await db.commit()
     await db.refresh(org_db)
+
+    # Assign user as member
+    await authz_service.assign_user_to_organization(user_id, organization_id, "member")
     
     return Organization(
         id=org_db.id,
