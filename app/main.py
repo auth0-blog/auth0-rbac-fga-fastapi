@@ -5,26 +5,36 @@ from contextlib import asynccontextmanager
 from app.config import settings
 from app.database import init_db
 from app.routes import organization_routes, resource_routes
+from app.services.authorization_service import authz_service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     print(f"Starting {settings.app_title} v{settings.app_version}")
-    print(f"OpenFGA API URL: {settings.openfga_api_url}")
+    print(f"Auth0 FGA API URL: {settings.auth0_fga_api_url}")
     print("Initializing database...")
     await init_db()
     print("Database initialized successfully!")
+    
+    # Check Auth0 FGA connection
+    print("Checking Auth0 FGA connection...")
+    fga_healthy = await authz_service.check_auth0_fga_health()
+    if fga_healthy:
+        print("Auth0 FGA connection established successfully!")
+    else:
+        print("Warning: Auth0 FGA connection failed. Check your configuration.")
+    
     yield
     # Shutdown
     print("Shutting down...")
 
 app = FastAPI(
-    title="FastAPI OpenFGA RBAC Demo",
+    title="FastAPI Auth0 FGA RBAC Demo",
     version=settings.app_version,
     debug=settings.debug,
     lifespan=lifespan,
     description="""
-    A simple FastAPI application demonstrating RBAC (Role-Based Access Control) using OpenFGA.
+    A simple FastAPI application demonstrating RBAC (Role-Based Access Control) using Auth0 FGA.
     
     This demo showcases:
     - Organizations with admin/member roles
@@ -36,7 +46,7 @@ app = FastAPI(
     - **member**: Can view organization members and resources, create new resources
     - **Resources**: Inherit permissions from their owning organization
     
-    All authorization is handled through OpenFGA using a simple, coarse-grained access control model.
+    All authorization is handled through Auth0 FGA using a simple, coarse-grained access control model.
     """
 )
 
@@ -65,7 +75,7 @@ app.include_router(
 async def read_root():
     """Root endpoint with API information."""
     return {
-        "message": "Welcome to the FastAPI OpenFGA RBAC Demo!",
+        "message": "Welcome to the FastAPI Auth0 FGA RBAC Demo!",
         "version": settings.app_version,
         "docs": "/docs",
         "redoc": "/redoc",
@@ -81,14 +91,19 @@ async def read_root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy", "version": settings.app_version}
+    """Health check endpoint including Auth0 FGA status."""
+    fga_healthy = await authz_service.check_auth0_fga_health()
+    return {
+        "status": "healthy", 
+        "version": settings.app_version,
+        "auth0_fga": "connected" if fga_healthy else "disconnected"
+    }
 
 @app.get("/rbac-info")
 async def rbac_info():
     """Information about the RBAC model implementation."""
     return {
-        "model": "OpenFGA RBAC Implementation",
+        "model": "Auth0 FGA RBAC Implementation",
         "pattern": "Coarse-grained access control",
         "types": {
             "user": "Individual users in the system",
