@@ -73,7 +73,7 @@ fastapi-openfga-project/
 │   ├── services/
 │   │   └── authorization_service.py # OpenFGA integration
 │   ├── utils/
-│   │   └── openfga_client.py    # OpenFGA client wrapper
+│   │   └── auth0_fga_client.py    # OpenFGA client wrapper
 │   └── openfga/
 │       └── model.fga.yaml       # OpenFGA model definition
 ├── app.db                       # SQLite database file (auto-created)

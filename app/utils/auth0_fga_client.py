@@ -104,4 +104,4 @@ class Auth0FGAClient:
             return False
 
 # Global client instance
-openfga_client = Auth0FGAClient()
+fga_client = Auth0FGAClient()

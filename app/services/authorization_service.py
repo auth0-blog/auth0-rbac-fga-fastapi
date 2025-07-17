@@ -1,6 +1,6 @@
 from typing import List, Optional
 from openfga_sdk.client.models import ClientTuple
-from app.utils.auth0_fga_client import openfga_client
+from app.utils.auth0_fga_client import fga_client
 
 ROLES = ["admin", "member"]
 
@@ -19,7 +19,7 @@ class AuthorizationService:
             relation=role,
             object=f"organization:{organization_id}"
         )
-        return await openfga_client.write_tuples([client_tuple])
+        return await fga_client.write_tuples([client_tuple])
     
     async def remove_user_from_organization(self, user_id: str, 
                                             organization_id: str, 
@@ -33,7 +33,7 @@ class AuthorizationService:
             relation=role,
             object=f"organization:{organization_id}"
         )
-        return await openfga_client.delete_tuples([client_tuple])
+        return await fga_client.delete_tuples([client_tuple])
     
     async def assign_resource_to_organization(self, resource_id: str, 
                                               organization_id: str) -> bool:
@@ -43,11 +43,11 @@ class AuthorizationService:
             relation="organization",
             object=f"resource:{resource_id}"
         )
-        return await openfga_client.write_tuples([client_tuple])
+        return await fga_client.write_tuples([client_tuple])
     
     async def check_permission_on_resource(self, user_id: str, action: str, resource_id: str) -> bool:
         """Check if user is allowed to perform an action on a resource."""
-        return await openfga_client.check_permission(
+        return await fga_client.check_permission(
             user=f"user:{user_id}",
             relation=action,
             object_id=f"resource:{resource_id}"
@@ -55,7 +55,7 @@ class AuthorizationService:
     
     async def check_permission_on_org(self, user_id: str, action: str, org_id: str) -> bool:
         """Check if user is allowed to perform an action on an organization."""
-        return await openfga_client.check_permission(
+        return await fga_client.check_permission(
             user=f"user:{user_id}",
             relation=action,
             object_id=f"organization:{org_id}"
@@ -63,12 +63,12 @@ class AuthorizationService:
 
     async def get_user_organizations(self, user_id: str) -> List[str]:
         """Get all organizations a user is a member of."""
-        admin_orgs = await openfga_client.list_objects(
+        admin_orgs = await fga_client.list_objects(
             user=f"user:{user_id}",
             relation="admin",
             object_type="organization"
         )
-        member_orgs = await openfga_client.list_objects(
+        member_orgs = await fga_client.list_objects(
             user=f"user:{user_id}",
             relation="member",
             object_type="organization"
@@ -79,7 +79,7 @@ class AuthorizationService:
     
     async def get_user_resources(self, user_id: str) -> List[str]:
         """Get all resources a user can view."""
-        resources = await openfga_client.list_objects(
+        resources = await fga_client.list_objects(
             user=f"user:{user_id}",
             relation="can_view_resource",
             object_type="resource"
@@ -89,7 +89,7 @@ class AuthorizationService:
     
     async def check_auth0_fga_health(self) -> bool:
         """Check if Auth0 FGA service is healthy."""
-        return await openfga_client.health_check()
+        return await fga_client.health_check()
 
 # Global authorization service instance
 authz_service = AuthorizationService()

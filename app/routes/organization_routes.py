@@ -93,43 +93,6 @@ async def create_organization(
         created_at=org_db.created_at
     )
 
-@router.put("/{organization_id}", response_model=Organization)
-async def update_organization(
-    organization_id: str,
-    organization: OrganizationUpdate,
-    user_id: str = Query(..., description="User ID for authorization"),
-    db: AsyncSession = Depends(get_db)
-):
-    """Update an organization (admin only)."""
-    if not await authz_service.check_permission_on_org(user_id, 
-                                                       "can_add_member", 
-                                                       organization_id):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    result = await db.execute(select(OrganizationDB).where(OrganizationDB.id == organization_id))
-    org_db = result.scalar_one_or_none()
-    
-    if not org_db:
-        raise HTTPException(status_code=404, detail="Organization not found")
-    
-    # Update fields
-    update_data = organization.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(org_db, field, value)
-    
-    await db.commit()
-    await db.refresh(org_db)
-
-    # Assign user as member
-    await authz_service.assign_user_to_organization(user_id, organization_id, "member")
-    
-    return Organization(
-        id=org_db.id,
-        name=org_db.name,
-        description=org_db.description,
-        created_at=org_db.created_at
-    )
-
 @router.delete("/{organization_id}")
 async def delete_organization(
     organization_id: str,
@@ -138,7 +101,7 @@ async def delete_organization(
 ):
     """Delete an organization (admin only)."""
     if not await authz_service.check_permission_on_org(user_id, 
-                                                       "can_add_member", 
+                                                       "can_delete_member", 
                                                        organization_id):
         raise HTTPException(status_code=403, detail="Admin access required")
     

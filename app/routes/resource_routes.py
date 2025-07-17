@@ -113,42 +113,6 @@ async def create_resource(
         created_at=resource_db.created_at
     )
 
-@router.put("/{resource_id}", response_model=Resource)
-async def update_resource(
-    resource_id: str,
-    resource_update: ResourceUpdate,
-    user_id: str = Query(..., description="User ID for authorization"),
-    db: AsyncSession = Depends(get_db)
-):
-    """Update a resource (admin only)."""
-    if not await authz_service.check_permission_on_resource(user_id, 
-                                                            "can_delete_resource", 
-                                                            resource_id):
-        raise HTTPException(status_code=403, detail="Admin access required")
-    
-    result = await db.execute(select(ResourceDB).where(ResourceDB.id == resource_id))
-    resource_db = result.scalar_one_or_none()
-    
-    if not resource_db:
-        raise HTTPException(status_code=404, detail="Resource not found")
-    
-    # Update fields
-    update_data = resource_update.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(resource_db, field, value)
-    
-    await db.commit()
-    await db.refresh(resource_db)
-    
-    return Resource(
-        id=resource_db.id,
-        name=resource_db.name,
-        description=resource_db.description,
-        resource_type=resource_db.resource_type,
-        organization_id=resource_db.organization_id,
-        created_at=resource_db.created_at
-    )
-
 @router.delete("/{resource_id}")
 async def delete_resource(
     resource_id: str,

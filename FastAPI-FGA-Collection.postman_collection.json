@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "fastapi-openfga-rbac-demo",
-		"name": "FastAPI OpenFGA RBAC Demo",
-		"description": "A simplified collection demonstrating RBAC (Role-Based Access Control) using OpenFGA with organizations and resources.",
+		"_postman_id": "fastapi-fga-rbac-demo",
+		"name": "FastAPI Auth0 FGA RBAC Demo",
+		"description": "A simplified collection demonstrating RBAC (Role-Based Access Control) using Auth0 FGA with organizations and resources.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "fastapi-openfga-rbac"
+		"_exporter_id": "fastapi-fga-rbac"
 	},
 	"item": [
 		{
