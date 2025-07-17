@@ -32,7 +32,9 @@ async def list_resources(
     
     accessible_resources = []
     for resource in all_resources:
-        if await authz_service.can_view_resource(user_id, resource.id):
+        if await authz_service.check_permission_on_resource(user_id, 
+                                                            "can_view_resource", 
+                                                            resource.id):
             accessible_resources.append(Resource(
                 id=resource.id,
                 name=resource.name,
@@ -51,7 +53,9 @@ async def get_resource(
     db: AsyncSession = Depends(get_db)
 ):
     """Get a specific resource."""
-    if not await authz_service.can_view_resource(user_id, resource_id):
+    if not await authz_service.check_permission_on_resource(user_id, 
+                                                            "can_view_resource", 
+                                                            resource_id):
         raise HTTPException(status_code=403, detail="Access denied")
     
     result = await db.execute(select(ResourceDB).where(ResourceDB.id == resource_id))
@@ -76,7 +80,9 @@ async def create_resource(
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new resource (admin or member of organization)."""
-    if not await authz_service.can_add_resource(user_id, resource.organization_id):
+    if not await authz_service.check_permission_on_org(user_id, 
+                                                       "can_add_resource", 
+                                                       resource.organization_id):
         raise HTTPException(status_code=403, detail="Cannot add resources to this organization")
     
     resource_id = str(uuid.uuid4())
@@ -115,7 +121,9 @@ async def update_resource(
     db: AsyncSession = Depends(get_db)
 ):
     """Update a resource (admin only)."""
-    if not await authz_service.can_delete_resource(user_id, resource_id):
+    if not await authz_service.check_permission_on_resource(user_id, 
+                                                            "can_delete_resource", 
+                                                            resource_id):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     result = await db.execute(select(ResourceDB).where(ResourceDB.id == resource_id))
@@ -148,7 +156,9 @@ async def delete_resource(
     db: AsyncSession = Depends(get_db)
 ):
     """Delete a resource (admin only)."""
-    if not await authz_service.can_delete_resource(user_id, resource_id):
+    if not await authz_service.check_permission_on_resource(user_id, 
+                                                            "can_delete_resource", 
+                                                            resource_id):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     result = await db.execute(select(ResourceDB).where(ResourceDB.id == resource_id))
@@ -176,8 +186,8 @@ async def check_resource_permissions(
         raise HTTPException(status_code=404, detail="Resource not found")
     
     permissions = {
-        "can_view": await authz_service.can_view_resource(user_id, resource_id),
-        "can_delete": await authz_service.can_delete_resource(user_id, resource_id)
+        "can_view": await authz_service.check_permission_on_resource(user_id, "can_view_resource", resource_id),
+        "can_delete": await authz_service.check_permission_on_resource(user_id, "can_delete_resource", resource_id)
     }
     
     return {

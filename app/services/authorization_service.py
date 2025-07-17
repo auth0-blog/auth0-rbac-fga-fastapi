@@ -45,47 +45,21 @@ class AuthorizationService:
         )
         return await openfga_client.write_tuples([client_tuple])
     
-    async def can_add_member(self, user_id: str, organization_id: str) -> bool:
-        """Check if user can add members to organization (admin only)."""
+    async def check_permission_on_resource(self, user_id: str, action: str, resource_id: str) -> bool:
+        """Check if user is allowed to perform an action on a resource."""
         return await openfga_client.check_permission(
             user=f"user:{user_id}",
-            relation="can_add_member",
-            object_id=f"organization:{organization_id}"
-        )
-    
-    async def can_delete_member(self, user_id: str, organization_id: str) -> bool:
-        """Check if user can delete members from organization (admin only)."""
-        return await openfga_client.check_permission(
-            user=f"user:{user_id}",
-            relation="can_delete_member",
-            object_id=f"organization:{organization_id}"
-        )
-    
-    async def can_view_member(self, user_id: str, organization_id: str) -> bool:
-        """Check if user can view members of organization (admin or member)."""
-        return await openfga_client.check_permission(
-            user=f"user:{user_id}",
-            relation="can_view_member",
-            object_id=f"organization:{organization_id}"
-        )
-    
-    async def can_add_resource(self, user_id: str, organization_id: str) -> bool:
-        """Check if user can add resources to organization (admin or member)."""
-        return await openfga_client.check_permission(
-            user=f"user:{user_id}",
-            relation="can_add_resource",
-            object_id=f"organization:{organization_id}"
-        )
-    
-    async def can_delete_resource(self, user_id: str, resource_id: str) -> bool:
-        """Check if user can delete a resource (admin only)."""
-        return await openfga_client.check_permission(
-            user=f"user:{user_id}",
-            relation="can_delete_resource",
+            relation=action,
             object_id=f"resource:{resource_id}"
         )
     
-    async def can_view_resource(self, user_id: str, resource_id: str) -> bool:
+    async def check_permission_on_org(self, user_id: str, action: str, org_id: str) -> bool:
+        """Check if user is allowed to perform an action on an organization."""
+        return await openfga_client.check_permission(
+            user=f"user:{user_id}",
+            relation=action,
+            object_id=f"organization:{org_id}"
+        )
         """Check if user can view a resource (admin or member)."""
         return await openfga_client.check_permission(
             user=f"user:{user_id}",

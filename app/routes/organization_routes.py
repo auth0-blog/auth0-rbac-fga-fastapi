@@ -28,7 +28,7 @@ async def list_organizations(
     
     accessible_orgs = []
     for org in all_orgs:
-        if await authz_service.can_view_member(user_id, org.id):
+        if await authz_service.check_permission_on_org(user_id, "can_view_member", org.id):
             accessible_orgs.append(Organization(
                 id=org.id,
                 name=org.name,
@@ -44,7 +44,9 @@ async def get_organization(
     db: AsyncSession = Depends(get_db)
 ):
     """Get a specific organization."""
-    if not await authz_service.can_view_member(user_id, organization_id):
+    if not await authz_service.check_permission_on_org(user_id, 
+                                                       "can_view_member", 
+                                                       organization_id):
         raise HTTPException(status_code=403, detail="Access denied")
     
     result = await db.execute(select(OrganizationDB).where(OrganizationDB.id == organization_id))
@@ -99,7 +101,9 @@ async def update_organization(
     db: AsyncSession = Depends(get_db)
 ):
     """Update an organization (admin only)."""
-    if not await authz_service.can_add_member(user_id, organization_id):
+    if not await authz_service.check_permission_on_org(user_id, 
+                                                       "can_add_member", 
+                                                       organization_id):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     result = await db.execute(select(OrganizationDB).where(OrganizationDB.id == organization_id))
@@ -130,7 +134,9 @@ async def delete_organization(
     db: AsyncSession = Depends(get_db)
 ):
     """Delete an organization (admin only)."""
-    if not await authz_service.can_add_member(user_id, organization_id):
+    if not await authz_service.check_permission_on_org(user_id, 
+                                                       "can_add_member", 
+                                                       organization_id):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     result = await db.execute(select(OrganizationDB).where(OrganizationDB.id == organization_id))
@@ -152,7 +158,9 @@ async def add_member(
     db: AsyncSession = Depends(get_db)
 ):
     """Add a member to an organization (admin only)."""
-    if not await authz_service.can_add_member(user_id, organization_id):
+    if not await authz_service.check_permission_on_org(user_id, 
+                                                       "can_add_member", 
+                                                       organization_id):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     # Check if organization exists in database
@@ -185,7 +193,9 @@ async def remove_member(
     db: AsyncSession = Depends(get_db)
 ):
     """Remove a member from an organization (admin only)."""
-    if not await authz_service.can_delete_member(user_id, organization_id):
+    if not await authz_service.check_permission_on_org(user_id, 
+                                                       "can_delete_member", 
+                                                       organization_id):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     # Check if organization exists in database
